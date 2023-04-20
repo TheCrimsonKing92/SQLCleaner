@@ -1,0 +1,121 @@
+<html>
+    <head>
+        <title>SQL Cleaner</title>
+        <link rel="stylesheet" href="highlight/styles/default.min.css">
+        <script src="highlight/highlight.min.js"></script>
+    </head>
+    <body>
+        <p>
+            Insert your wrapped SQL content to be extracted in a cleaned form (currently no special handling for usage of double-quotes within the SQL).
+        </p>
+        <textarea id="input-content" style="width: 25vw;"></textarea>
+        <pre><code id="output-content" class="language-sql"></code></pre>
+        <p>Reverse Functionality: Insert your unwrapped SQL to have quotes, spacing, and pluses added.</p>
+        <textarea id="reverse-input" style="width: 25vw;"></textarea>
+        <pre><code id="reverse-output" class="language-java"></code></pre>
+        <script type="text/javascript">
+            hljs.configure({useBR: true});
+            const outputContent = document.getElementById('output-content');
+            const reverseOutput = document.getElementById('reverse-output');
+
+            const firstNonWhitespace = string => string.search(/\S/);
+            const getLines = value => value.split(/\r?\n/);           
+
+            const hasConsistentSpacingAfterFirst = lines => {
+                console.log("Looking for consistent spacing after first line");
+                if (lines.length < 2) {
+                    console.log("Only one line, returning false");
+                    return false;
+                }
+
+                const comparator = firstNonWhitespace(lines[1]);
+                console.log("Comparator value: ", comparator);
+
+                if (comparator < 1) {
+                    return false;
+                }
+
+                return lines.every((element, index) => index === 0 || firstNonWhitespace(element) >= comparator);
+            };
+
+            const removeConsistentLeftSpacing = lines => {                
+                const consistentLeftWhitespace = lines.map(firstNonWhitespace).reduce((prev, current) => Math.min(prev, current));
+
+                if (consistentLeftWhitespace < 1) {
+                    return lines;
+                }
+
+                return lines.map(line => line.substring(consistentLeftWhitespace));
+            };
+
+            const removeConsistentLeftSpacingAfterFirst = lines => {
+                const consistentLeftWhitespace = lines.filter((_, index) => index > 0).map(firstNonWhitespace).reduce((prev, current) => Math.min(prev, current));
+
+                if (consistentLeftWhitespace < 1) {
+                    return lines;
+                }
+
+                return lines.map((line, index) => index === 0 ? line : line.substring(consistentLeftWhitespace));
+            };
+
+            const cleanUpToTwo = (string, character) => {
+                const first = string.indexOf(character);
+                const last = (string.lastIndexOf(character) === first ? -1 : string.lastIndexOf(character));
+
+                if (first < 0 && last < 0) {
+                    return string;
+                }
+
+                const preservedStart = first > 0 ? string.substring(0, first) : "";
+
+                if (last < 0) {
+                    return preservedStart.concat(string.substring(first + 1));
+                }
+
+                const preservedEnd = last < string.length - 1 ? string.substring(last + 1) : "";
+
+                return preservedStart.concat(string.substring(first + 1, last)).concat(preservedEnd);
+            };
+
+            const cleanPluses = string => cleanUpToTwo(string, '+');
+            const cleanQuotes = string => cleanUpToTwo(string, '"');
+
+            const wrapLine = (line, index, array) => {
+                const prependValue = index === 0 ? 'final String sql = " ' : '                   " ';
+                const appendValue = index === (array.length - 1) ? '";' : '" +';
+                return prependValue.concat(line.trim()).concat(appendValue);
+            };
+
+            const addWrapping = value => {
+                const lines = getLines(value);
+                return lines.map(wrapLine).join('\n');
+            };
+
+            const removeWrapping = value => {
+                // TODO account for inconsistent spacing on line 1, but consistent spacing on lines 2+
+                const lines = getLines(value);
+
+                const initiallyCleaned = hasConsistentSpacingAfterFirst(lines) ? removeConsistentLeftSpacingAfterFirst(lines)
+                                                                               : removeConsistentLeftSpacing(lines);
+
+                return initiallyCleaned.map(p => cleanQuotes(cleanPluses(p))).join('\n');
+            }
+
+            document.getElementById('input-content').addEventListener('input', e => {
+                if (e.target.scrollHeight > e.target.clientHeight) {
+                    e.target.style.height = (e.target.scrollHeight + 10) + "px"
+                }
+                outputContent.innerHTML = removeWrapping(e.target.value);
+                hljs.highlightElement(outputContent);
+            });
+
+            document.getElementById('reverse-input').addEventListener('input', e => {
+                if (e.target.scrollHeight > e.target.clientHeight) {
+                    e.target.style.height = (e.target.scrollHeight + 10) + "px"
+                }
+                reverseOutput.innerHTML = addWrapping(e.target.value);
+                hljs.highlightElement(reverseOutput);
+            })
+        </script>
+    </body>
+</html>
