@@ -9,10 +9,18 @@
             Insert your wrapped SQL content to be extracted in a cleaned form (currently no special handling for usage of double-quotes within the SQL).
         </p>
         <textarea id="input-content" style="width: 25vw;"></textarea>
-        <pre><code id="output-content" class="language-sql"></code></pre>
-        <p>Reverse Functionality: Insert your unwrapped SQL to have quotes, spacing, and pluses added.</p>
-        <textarea id="reverse-input" style="width: 25vw;"></textarea>
-        <pre><code id="reverse-output" class="language-java"></code></pre>
+        <button id="copy-content" type="button">Copy Contents</button>
+        <pre>
+            <code id="output-content" class="language-sql"></code>
+        </pre>
+        <section class="reverse-cleaner">
+            <p>Reverse Functionality: Insert your unwrapped SQL to have quotes, spacing, and pluses added.</p>
+            <textarea id="reverse-input" style="width: 25vw;"></textarea>
+            <button id="copy-reverse-content" type="button">Copy Contents</button>
+            <pre>
+                <code id="reverse-output" class="language-java"></code>
+            </pre>            
+        </section>
         <script type="text/javascript">
             hljs.configure({useBR: true});
             const outputContent = document.getElementById('output-content');
@@ -115,6 +123,22 @@
                 }
                 reverseOutput.innerHTML = addWrapping(e.target.value);
                 hljs.highlightElement(reverseOutput);
+            });
+
+            document.getElementById('copy-content').addEventListener('click', e => {
+                const contentToWrite = removeConsistentLeftSpacing(getLines(outputContent.innerText)).join('\n');
+                navigator.clipboard.writeText(contentToWrite).then(
+                    () => console.log("Stripped contents copied to clipboard!"),
+                    () => console.error("Failed to write stripped contents to clipboard!")
+                )
+            });
+
+            document.getElementById('copy-reverse-content').addEventListener('click', e => {
+                const contentToWrite = reverseOutput.innerText;
+                navigator.clipboard.writeText(contentToWrite).then(
+                    () => console.log("Reversed contents copied to clipboard!"),
+                    () => console.error("Failed to write reversed contents to clipboard!")
+                );
             })
         </script>
     </body>
