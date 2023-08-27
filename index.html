@@ -46,7 +46,7 @@
                 return lines.every((element, index) => index === 0 || firstNonWhitespace(element) >= comparator);
             };
 
-            const removeConsistentLeftSpacing = lines => {                
+            const removeConsistentLeftSpacing = lines => {   
                 const consistentLeftWhitespace = lines.map(firstNonWhitespace).reduce((prev, current) => Math.min(prev, current));
 
                 if (consistentLeftWhitespace < 1) {
@@ -103,11 +103,10 @@
                 // TODO account for inconsistent spacing on line 1, but consistent spacing on lines 2+
                 const lines = getLines(value);
 
-                const initiallyCleaned = hasConsistentSpacingAfterFirst(lines) ? removeConsistentLeftSpacingAfterFirst(lines)
-                                                                               : removeConsistentLeftSpacing(lines);
+                const initiallyCleaned = lines.map(p => cleanQuotes(cleanPluses(p)));
 
-                return initiallyCleaned.map(p => cleanQuotes(cleanPluses(p))).join('\n');
-            }
+                return removeConsistentLeftSpacing(initiallyCleaned).join('\n');
+            };
 
             document.getElementById('input-content').addEventListener('input', e => {
                 if (e.target.scrollHeight > e.target.clientHeight) {
@@ -139,7 +138,7 @@
                     () => console.log("Reversed contents copied to clipboard!"),
                     () => console.error("Failed to write reversed contents to clipboard!")
                 );
-            })
+            });
         </script>
     </body>
 </html>
